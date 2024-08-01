@@ -1,0 +1,72 @@
+---
+title: "Laboratorio #1 George Albadr"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+library(dplyr)
+library(writexl)
+```
+
+## GitHub Documents
+
+This is an R Markdown format used for publishing markdown documents to GitHub. When you click the **Knit** button all R code chunks are run and a markdown file (.md) suitable for publishing to GitHub is generated.
+
+## Including Code
+
+You can include R code in the document as follows:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+```{r read_and_unify}
+modificar <-  function(archives){
+  data = read_excel(archives)
+  data = select(data, COD_VIAJE, CLIENTE, UBICACION, CANTIDAD, PILOTO, Q, CREDITO, UNIDAD)
+  mes = substr(archives, 3, 4)
+  ano = substr(archives, 6, 9)
+  data$Fecha = paste0(mes, "-", ano)
+  return(data)
+}
+ruta = 'Lab1'
+lista = list.files(pattern = "\\.xlsx", full.names = TRUE)
+print(lista)
+listadf=lapply(lista, modificar)
+tabla = bind_rows(listadf)
+print(tabla)
+write_xlsx(tabla, "tabla.csv")
+```
+```{r}
+# Nueva lista de vectores
+lista_vectores <- list(
+  c(5, 10, 10, 15, 20, 10, 25),
+  c(7, 14, 14, 21, 14, 28, 7),
+  c(2, 4, 4, 6, 8, 4, 10)
+)
+
+# Función para calcular la moda
+calcular_moda <- function(x) {
+  tabla_frec <- table(x)
+  moda <- as.numeric(names(tabla_frec)[tabla_frec == max(tabla_frec)])
+  return(moda)
+}
+
+# Aplicar la función a cada vector de la lista
+modas <- lapply(lista_vectores, calcular_moda)
+print(modas)
+```
+
