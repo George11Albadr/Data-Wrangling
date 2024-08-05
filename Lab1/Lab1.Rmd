@@ -5,6 +5,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(readr)
 library(readxl)
 library(dplyr)
 library(writexl)
@@ -69,4 +70,17 @@ calcular_moda <- function(x) {
 modas <- lapply(lista_vectores, calcular_moda)
 print(modas)
 ```
+
+```{r}
+file_path <- "/Users/georgealbadr/Documents/GitHub/Data-Wrangling/Lab1/INE_PARQUE_VEHICULAR_080219.txt"
+
+data <- read_delim(file_path, delim = "|", col_names = TRUE)
+
+# Cambiar opciones globales para mostrar más filas y columnas
+options(tibble.print_max = 50, tibble.print_min = 10, tibble.width = Inf)
+
+# Mostrar el tibble con las nuevas opciones
+data
+```
+
 
