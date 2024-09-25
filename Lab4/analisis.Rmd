@@ -1,0 +1,399 @@
+---
+title: "Lab#4"
+author: "STDT Ing. George Albadr"
+date: "2024-09-09"
+output: pdf_document
+---
+```{r setup, include=FALSE}
+# Cargar las librerías necesarias
+library(dplyr)
+library(ggplot2)
+library(readr)
+options(scipen = 999)
+```
+
+```{r}
+# Lectura del archivo CSV de manera eficiente
+file_path <- "/Users/georgealbadr/Downloads/OneDrive_1_9-2-2024/tabla_completa.csv"
+datos <- read_csv(file_path)
+# Ver los nombres de las columnas del dataset
+colnames(datos)
+
+# Ver las primeras filas del dataset
+head(datos)
+```
+
+// ●	Flujo de Caja Anual
+
+```{r}
+# Filtrar datos para el año específico, por ejemplo 2017# Filtrar datos para el año específico, por ejemplo 2017
+datos_2017 <- datos %>%
+  filter(ANIO == 2017)
+
+# Agrupar y sumar ventas por mes
+ventas_mensuales_2017 <- datos_2017 %>%
+  group_by(MES) %>%
+  summarise(total_ventas = sum(Q)) %>%
+  mutate(MES = factor(MES, levels = c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12")))
+
+# Gráfico de línea comparando las ventas por mes
+ggplot(ventas_mensuales_2017, aes(x = MES, y = total_ventas)) +
+  geom_line(color = "blue", size = 1.5, group = 1) +  # Asegura que la línea conecte los puntos
+  geom_point(color = "red", size = 3) +
+  labs(title = "Ventas Mensuales para 2017",
+       x = "Mes", y = "Total de Ventas") +
+  theme_minimal() +
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 45, hjust = 1), # Rotar el texto del eje X para mejor visualización
+        plot.margin = unit(c(1, 1, 1, 1), "cm")) # Añadir espacio alrededor del gráfico
+```
+
+```{r}
+# Filtrar datos para el año específico, por ejemplo, 2017
+datos_2017 <- datos %>%
+  filter(ANIO == 2017)
+
+# Agrupar datos por piloto y sumar sus ventas
+ventas_por_piloto <- datos_2017 %>%
+  group_by(PILOTO) %>%
+  summarise(total_ventas = sum(Q))
+
+# Gráfica de barras mostrando ventas por piloto
+ggplot(ventas_por_piloto, aes(x = reorder(PILOTO, -total_ventas), y = total_ventas)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Carga de Trabajo por Piloto", x = "Piloto", y = "Total de Ventas") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+
+```{r}
+# Análisis de las tarifas (basado en la columna Q)
+tarifas_analisis <- datos %>%
+  summarise(tarifa_promedio = mean(Q))
+
+tarifas_analisis
+```
+```{r}
+# Análisis de diferencias entre productos entregados y vendidos
+robo_analisis <- datos %>%
+  group_by(PILOTO) %>%
+  summarise(total_vendido = sum(Q), total_entregado = sum(CANTIDAD)) %>%
+  mutate(diferencia = total_vendido - total_entregado) %>%
+  arrange(desc(diferencia))
+
+robo_analisis
+```
+
+```{r}
+library(dplyr)
+
+# Crear una columna que identifique si el pedido está marcado como "Faltante"
+datos <- datos %>%
+  mutate(Faltante = ifelse(grepl("Faltante", CLIENTE), TRUE, FALSE))
+
+# Crear una tabla que compare lo entregado (CANTIDAD) vs lo vendido (Q) y si hubo un faltante
+robo_analisis <- datos %>%
+  group_by(PILOTO) %>%
+  summarise(
+    Total_Entregado = sum(CANTIDAD, na.rm = TRUE),  # Cantidad total entregada
+    Total_Vendido = sum(Q, na.rm = TRUE),  # Cantidad total reportada como vendida
+    Diferencia = Total_Entregado - Total_Vendido,  # Diferencia entre lo entregado y lo vendido
+    Pedidos_Faltantes = sum(Faltante)  # Contar cuántos pedidos están marcados como "Faltante"
+  ) %>%
+  arrange(desc(Diferencia))  # Ordenar por mayor diferencia
+
+# Mostrar el resultado
+print(robo_analisis)
+```
+
+```{r}
+# Agrupar ventas por tipo de vehículo
+ventas_por_vehiculo <- datos_2017 %>%
+  group_by(UNIDAD) %>%
+  summarise(total_ventas = sum(Q))
+
+# Gráfico de barras mostrando ventas por tipo de vehículo
+ggplot(ventas_por_vehiculo, aes(x = reorder(UNIDAD, -total_ventas), y = total_ventas)) +
+  geom_bar(stat = "identity", fill = "turquoise") +
+  labs(title = "Ventas por Tipo de Vehículo", x = "Tipo de Vehículo", y = "Total de Ventas") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+# Agrupar ventas por tipo de vehículo y año
+ventas_por_vehiculo <- datos %>%
+  group_by(UNIDAD) %>%
+  summarise(total_ventas = sum(Q))
+
+# Gráfico de barras
+ggplot(ventas_por_vehiculo, aes(x = reorder(UNIDAD, -total_ventas), y = total_ventas)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Total de Ventas por Tipo de Vehículo",
+       x = "Tipo de Vehículo", y = "Total de Ventas") +
+  theme_minimal() +
+  theme(text = element_text(size = 9))
+```
+
+```{r}
+# Mejores pilotos por entrega
+mejores_pilotos <- datos %>%
+  group_by(PILOTO) %>%
+  summarise(total_entregas = n(), total_ventas = sum(Q)) %>%
+  arrange(desc(total_ventas))
+
+mejores_pilotos
+```
+
+```{r}
+# Agrupar ventas por cliente y calcular el total
+ventas_por_cliente <- datos_2017 %>%
+  group_by(CLIENTE) %>%
+  summarise(total_ventas = sum(Q)) %>%
+  arrange(desc(total_ventas))
+
+# Calcular el porcentaje acumulado de ventas
+ventas_por_cliente <- ventas_por_cliente %>%
+  mutate(acumulado = cumsum(total_ventas),
+         porcentaje_acumulado = acumulado / sum(total_ventas) * 100)
+
+# Determinar el corte para el 80% de las ventas
+corte_80 <- max(ventas_por_cliente$acumulado[ventas_por_cliente$porcentaje_acumulado <= 80])
+
+# Gráfico de barras para visualizar los clientes clave (80-20)
+ggplot(ventas_por_cliente, aes(x = reorder(CLIENTE, -total_ventas), y = total_ventas, fill = acumulado <= corte_80)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("TRUE" = "red", "FALSE" = "grey")) +
+  labs(title = "Análisis 80-20 de Clientes", x = "Cliente", y = "Total de Ventas") +
+  guides(fill=guide_legend(title="Top 80% Clients")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+```{r}
+# Agrupar ventas y entregas por piloto
+rendimiento_pilotos <- datos_2017 %>%
+  group_by(PILOTO) %>%
+  summarise(total_ventas = sum(Q), total_entregas = n()) %>%
+  mutate(eficiencia = total_ventas / total_entregas)
+
+# Gráfico de barras mostrando el rendimiento por piloto
+ggplot(rendimiento_pilotos, aes(x = reorder(PILOTO, -eficiencia), y = eficiencia)) +
+  geom_bar(stat = "identity", fill = "green") +
+  labs(title = "Eficiencia de Pilotos por Ventas y Entregas", x = "Piloto", y = "Eficiencia") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+```{r}
+# Agrupar datos por tipo de vehículo (UNIDAD) y calcular el volumen de entregas y contribución financiera
+resumen_vehiculos <- datos %>%
+  group_by(UNIDAD) %>%
+  summarise(
+    Volumen_Entregas = sum(CANTIDAD, na.rm = TRUE),  # Sumar la cantidad por tipo de vehículo
+    Contribucion_Flujo = sum(Q * CREDITO, na.rm = TRUE)  # Calcular la contribución financiera
+  )
+
+# Calcular el total de la contribución al flujo de caja para todos los vehículos
+total_contribucion <- sum(resumen_vehiculos$Contribucion_Flujo)
+
+# Calcular el porcentaje de contribución al flujo de caja para cada tipo de vehículo
+resumen_vehiculos <- resumen_vehiculos %>%
+  mutate(
+    Porcentaje_Contribucion_Flujo = (Contribucion_Flujo / total_contribucion),  # Calcular el porcentaje
+    Volumen_Entregas = comma(Volumen_Entregas),  # Aplicar formato con comas a las cifras
+    Porcentaje_Contribucion_Flujo = percent(Porcentaje_Contribucion_Flujo)  # Convertir a porcentaje
+  )
+
+# Mostrar la tabla final con el volumen de entregas y la contribución en porcentaje
+print(resumen_vehiculos)
+```
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Agrupación de datos por tipo de vehículo para sumar las entregas y los pagos recibidos
+resumen_vehiculos <- datos %>%
+  group_by(UNIDAD) %>%
+  summarise(
+    Volumen_Entregas = sum(CANTIDAD),  # Suma total de entregas por tipo de vehículo
+    Pagos_Recibidos = sum(Q)           # Suma total de pagos recibidos por tipo de vehículo
+  )
+
+# Crear un gráfico de barras para visualizar el volumen de entregas y los pagos recibidos
+ggplot(resumen_vehiculos, aes(x = UNIDAD)) +
+  geom_bar(aes(y = Volumen_Entregas, fill = "Volumen de Entregas"), stat = "identity", position = "dodge", alpha = 0.8) +
+  geom_bar(aes(y = Pagos_Recibidos, fill = "Pagos Recibidos"), stat = "identity", position = "dodge", alpha = 0.8) +
+  scale_fill_manual(values = c("Volumen de Entregas" = "skyblue", "Pagos Recibidos" = "orange")) +
+  labs(title = "Comparación de Volumen de Entregas y Pagos Recibidos por Tipo de Vehículo",
+       x = "Tipo de Vehículo", y = "Total") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.title = element_blank())
+```
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Agrupar los datos por año y calcular la tarifa promedio (total de Q / total de CANTIDAD)
+tarifas_por_anio <- datos %>%
+  group_by(ANIO) %>%
+  summarise(
+    Tarifa_Promedio = sum(Q) / sum(CANTIDAD)  # Tarifa promedio = total de pagos / total de entregas
+  )
+
+# Mostrar la tabla de tarifas promedio por año
+print(tarifas_por_anio)
+```
+
+```{r}
+# Datos de costos estimados (esto debe ser un input basado en datos de la empresa)
+costos_operativos <- data.frame(
+  UNIDAD = c("Camión Grande", "Panel", "Camión Pequeño"),
+  Costo_Por_Viaje = c(500, 300, 400)  # Estimación de costos por viaje por tipo de vehículo
+)
+
+# Calcular los ingresos generados por cada tipo de vehículo
+resumen_vehiculos <- datos %>%
+  group_by(UNIDAD) %>%
+  summarise(
+    Total_Ingresos = sum(Q * CREDITO, na.rm = TRUE),  # Suma de ingresos por tipo de vehículo
+    Total_Entregas = sum(CANTIDAD, na.rm = TRUE)  # Volumen de entregas por tipo de vehículo
+  )
+
+# Unir con los costos operativos
+rentabilidad_vehiculos <- left_join(resumen_vehiculos, costos_operativos, by = "UNIDAD") %>%
+  mutate(
+    Rentabilidad = (Total_Ingresos - Costo_Por_Viaje * Total_Entregas) / Total_Ingresos * 100  # Rentabilidad en porcentaje
+  )
+
+# Visualizar la rentabilidad por tipo de vehículo
+print(rentabilidad_vehiculos)
+```
+```{r}
+library(dplyr)
+
+# Calcular el total de ventas (CANTIDAD * Q) por CLIENTE
+resumen_clientes <- datos %>%
+  group_by(CLIENTE) %>%
+  summarise(
+    Total_Ventas = sum(CANTIDAD * Q, na.rm = TRUE)  # Calcular la suma de (CANTIDAD * Q)
+  ) %>%
+  arrange(desc(Total_Ventas))  # Ordenar por mayor total de ventas
+
+# Obtener las 5 ubicaciones con mayor total de ventas
+top_5_clientes <- resumen_clientes %>%
+  head(5)
+
+# Mostrar la tabla con los 5 clientes (ubicaciones) y su total de ventas
+print(top_5_clientes)
+```
+```{r}
+# Calcular la tarifa promedio por ubicación
+tarifas_por_ubicacion <- datos %>%
+  group_by(CLIENTE) %>%
+  summarise(Tarifa_Promedio = sum(Q) / sum(CANTIDAD)) %>%
+  arrange(desc(Tarifa_Promedio))
+
+# Gráfico de barras
+ggplot(tarifas_por_ubicacion, aes(x = reorder(CLIENTE, -Tarifa_Promedio), y = Tarifa_Promedio)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Tarifa Promedio por Ubicación",
+       x = "Ubicación",
+       y = "Tarifa Promedio") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+```{r}
+filtered_data <- datos %>%
+  filter(!grepl("Despacho a cliente|Faltante|DEVOLUCIÓN", CLIENTE, ignore.case = TRUE))
+
+# Group by CLIENTE and calculate total CREDITO
+client_sales <- filtered_data %>%
+  group_by(CLIENTE) %>%
+  summarise(CREDITO = sum(CREDITO)) %>%
+  arrange(desc(CREDITO))
+
+# Calculate cumulative percentage
+client_sales <- client_sales %>%
+  mutate(cumulative_percentage = cumsum(CREDITO) / sum(CREDITO) * 100)
+
+# Select clients that contribute to the first 80% of total sales
+important_clients <- client_sales %>%
+  filter(cumulative_percentage <= 80)
+
+# Display the important clients
+print(important_clients)
+```
+```{r}
+filtered_data <- datos %>%
+  filter(!grepl("Despacho a cliente|Faltante|DEVOLUCIÓN", CLIENTE, ignore.case = TRUE))
+
+# Agrupar por PILOTO y UNIDAD, y calcular las ventas totales (CREDITO) y la cantidad entregada (CANTIDAD)
+pilot_totals <- filtered_data %>%
+  group_by(PILOTO, UNIDAD) %>%
+  summarise(CREDITO = sum(CREDITO), CANTIDAD = sum(CANTIDAD))
+
+# Calcular el total de ventas y el total de entregas
+total_sales <- sum(pilot_totals$CREDITO)
+total_deliveries <- sum(pilot_totals$CANTIDAD)
+
+# Calcular el porcentaje de ventas y de entregas para cada piloto
+pilot_totals <- pilot_totals %>%
+  mutate(sales_percentage = (CREDITO / total_sales) * 100,
+         deliveries_percentage = (CANTIDAD / total_deliveries) * 100) %>%
+  arrange(desc(sales_percentage))
+
+# Mostrar la tabla con los porcentajes de ventas y entregas
+print(pilot_totals)
+```
+```{r}
+#
+# Filtrar las filas que contienen 'Despacho a cliente', 'Faltante', y 'DEVOLUCIÓN' en la columna CLIENTE
+filtered_data <- datos %>%
+  filter(!grepl("Despacho a cliente|Faltante|DEVOLUCIÓN", CLIENTE, ignore.case = TRUE))
+
+# Agrupar por PILOTO y UNIDAD, y calcular las ventas totales (CREDITO) y la cantidad entregada (CANTIDAD)
+pilot_totals <- filtered_data %>%
+  group_by(PILOTO, UNIDAD) %>%
+  summarise(CREDITO = sum(CREDITO), CANTIDAD = sum(CANTIDAD))
+
+# Calcular el total de ventas y el total de entregas
+total_sales <- sum(pilot_totals$CREDITO)
+total_deliveries <- sum(pilot_totals$CANTIDAD)
+
+# Calcular el porcentaje de ventas y de entregas para cada piloto
+pilot_totals <- pilot_totals %>%
+  mutate(sales_percentage = (CREDITO / total_sales) * 100,
+         deliveries_percentage = (CANTIDAD / total_deliveries) * 100) %>%
+  arrange(desc(deliveries_percentage))
+
+# Seleccionar los primeros 10 por deliveries_percentage
+top_10_pilots <- pilot_totals %>%
+  top_n(10, wt = deliveries_percentage)
+
+# Crear el gráfico de barras
+ggplot(top_10_pilots, aes(x = reorder(PILOTO, deliveries_percentage), y = deliveries_percentage)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +  # Cambiar la orientación del gráfico
+  ylim(0, 10) +  # Limitar el eje y de 0 a 10
+  labs(title = "Top 10 Pilotos por Porcentaje de Entregas",
+       x = "Piloto",
+       y = "Porcentaje de Entregas (%)") +
+  theme_minimal()
+```
+```{r}
+
+
+# Agrupar por CLIENTE y calcular las ventas totales (CREDITO) y la cantidad entregada (CANTIDAD)
+client_sales_distribution <- datos %>%
+  group_by(CLIENTE) %>%
+  summarise(CREDITO = sum(CREDITO), CANTIDAD = sum(CANTIDAD))
+
+# Crear el gráfico de dispersión con todos los puntos posibles
+ggplot(client_sales_distribution, aes(x = CANTIDAD, y = CREDITO)) +
+  geom_point(color = "blue", size = 3) +
+  labs(title = "Scatter Plot: Sales (CREDITO) vs Quantity Delivered (CANTIDAD)",
+       x = "Total Quantity Delivered (CANTIDAD)",
+       y = "Total Sales (CREDITO)") +
+  theme_minimal()
+```
+
