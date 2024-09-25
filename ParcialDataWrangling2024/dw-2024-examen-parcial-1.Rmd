@@ -103,9 +103,9 @@ paste0("Mis preguntas a resolver son: ",paste0(preguntas,collapse = ", "))
 
   - Usando Read.table() o read_delim()
 
-```{r}
+```{r, echo=TRUE, cache=TRUE}
 # Cargar el archivo usando read.delim() con sep = ":"
-datos <- read.delim("archivo.txt", sep = ":", header = TRUE)
+#datos <- read.delim("archivo.txt", sep = ":", header = TRUE)
 ```
 
 8. Si en un dataframe, a una variable de tipo `factor` le agrego un nuevo elemento que *no se encuentra en los niveles existentes*, ¿cuál sería el resultado esperado y por qué?
@@ -117,7 +117,7 @@ datos <- read.delim("archivo.txt", sep = ":", header = TRUE)
 Extra: ¿Cuántos posibles exámenes de 5 preguntas se pueden realizar utilizando como banco las diez acá presentadas?
 (responder con código de R.)
 
-```{r}
+```{r, echo=TRUE, cache=TRUE}
 n <- 10
 k <- 5
 total_examenes <- choose(n, k)
@@ -143,7 +143,7 @@ B. Estrategia de negocio ha decidido que ya no operará en aquellos territorios 
 
 ## A
 
-```{r }
+```{r, echo=TRUE, cache=TRUE}
 library("dplyr")
 df <- readRDS("/Users/georgealbadr/Documents/GitHub/Data-Wrangling/ParcialDataWrangling2024/parcial_anonimo.rds")
 
@@ -173,7 +173,7 @@ print(clientes_ordenados)
 
 ## B
 
-```{r }
+```{r, echo=TRUE, cache=TRUE}
 # Cargar el paquete dplyr
 library(dplyr)
 
