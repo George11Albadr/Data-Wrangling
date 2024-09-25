@@ -22,9 +22,25 @@ Indicaciones generales:
 
 1. ¿Qué es una ufunc y por qué debemos de utilizarlas cuando programamos trabajando datos?
 
+  - Una ufunc es una función universal que esta diseñada para manejar de manera eficiente grandes volúmnes y arreglos de datos o ya sea dtf, estas no solo ayudan con el soporte de varias operaciones que se estén trabajando si no que también con eficiencia en memoria y paralelismo mejorando el rendomiento de uso de funciones en bases de datos que se trabajen localmente en el CPU.
+
 2. Es una técnica en programación numérica que amplía los objetos que son de menor dimensión para que sean compatibles con los de mayor dimensión. Describa cuál es la técnica y de un breve ejemplo en R.
 
+  - El broadcasting maneja la compatibilidad dimensional entre objetos de diferentes tamaños o dimensiones extendiendo automáticamente los datos más pequeños para que coincidan con los datos más grandes.
+  
+```{r}
+
+matriz <- matrix(1:9, nrow = 3, byrow = TRUE)
+vector <- c(1, 2, 3)
+resultado <- matriz + vector
+
+print(resultado)
+```
+
+
 3. ¿Qué es el axioma de elegibilidad y por qué es útil al momento de hacer análisis de datos? 
+
+  - El axioma de elegibilidad establece que, al analizar varios conjuntos se escoge uno en base a criterios establecidos para ser considerada como elegible. Es útil ya que ayuda con la filtración de datos al definir criterios específicos, Optimiza la toma de decisiones dentro de una empresa ej: al momento de querer hacer un análisis de los eventos de una página de una base de datos al querer por ejemplo maximizar o minimizar eventos por usuario en cieras áreas se les facilitará la  toma de desiciones en base a la elección de alternativas por filtración de datos.
 
 4. Cuál es la relación entre la granularidad y la agregación de datos? Mencione un breve ejemplo. Luego, exploque cuál es la granularidad o agregación requerida para poder generar un reporte como el siguiente:
 
@@ -36,20 +52,24 @@ Indicaciones generales:
 |FR   | 4,332    |
 |ROW  | 943      |
 
+  - La relación entre granularidad y la agregación de datos es la combinación de la búsqueda en mayor fidelidad en la recolección de datos, es decir, que tan finos o específicos sean estos mientras que la agregación se encarga de tomar específicamente estos datos de mayor granularidad y que se obtengan mejores resúmenes o análisis basados en la data trabajada.
+  
+  - La granularidad requerida para el el reporte es una más baja ya que se quiere trabajar con un grán volúmen de datos y el objeto de estudio cuenta con varias características como para incluirlas en el conteo de Usuarios por país
 
 
 ## Sección I: Preguntas teóricas. (50pts)
 
 * Existen 10 preguntas directas en este Rmarkdown, de las cuales usted deberá responder 5. Las 5 a responder estarán determinadas por un muestreo aleatorio basado en su número de carné.
 
-* Ingrese su número de carné en  `set.seed()` y corra el chunk de R para determinar cuáles preguntas debe responder.
+* Ingrese su número de carné en  `set.seed(20210580)` y corra el chunk de R para determinar cuáles preguntas debe responder.
 
 
 ```{r, echo=TRUE, cache=TRUE}
 
-#set.seed("escriba acá su carné") 
+set.seed("20210580") 
 v<- 1:10
 preguntas <-sort(sample(v, size = 5, replace = FALSE ))
+
 
 paste0("Mis preguntas a resolver son: ",paste0(preguntas,collapse = ", "))
 
@@ -64,24 +84,45 @@ paste0("Mis preguntas a resolver son: ",paste0(preguntas,collapse = ", "))
     * `names(df)[4] <- "new_name"` donde la posición 4 corresponde a la variable `old_name`
     * `df[df$variable == "valor",]`
     
+    * Con su uso de pipes (%>%)
+    * GLIMPSE()
+    * SELECT()
+    * RENAME()
+    * FILTER()
+    
     
 2. Al momento de filtrar en SQL, ¿cuál keyword cumple las mismas funciones que el keyword `OR`  para filtrar uno o más elementos una misma columna?
-3. ¿Por qué en R utilizamos funciones de la familia apply (lapply,vapply) en lugar de utilizar ciclos?
+
+  - IN
+
 4. ¿Cuál es la diferencia entre utilizar `==` y `=` en R?
+
+  - (Compaaración == ) (Asignación = )
+
 5. ¿Cuál es la forma correcta de cargar un archivo de texto donde el delimitador es `:`?
-6. ¿Qué es un vector y en qué se diferencia en una lista en R?
-7. ¿Qué pasa si quiero agregar una nueva categoría a un factor que no se encuentra en los niveles existentes?
+
+  - Usando Read.table() o read_delim()
+
+```{r}
+# Cargar el archivo usando read.delim() con sep = ":"
+datos <- read.delim("archivo.txt", sep = ":", header = TRUE)
+```
+
 8. Si en un dataframe, a una variable de tipo `factor` le agrego un nuevo elemento que *no se encuentra en los niveles existentes*, ¿cuál sería el resultado esperado y por qué?
     * El nuevo elemento
     * `NA`
-9. En SQL, ¿para qué utilizamos el keyword `HAVING`?
-10. Si quiero obtener como resultado las filas de la tabla A que no se encuentran en la tabla B, ¿cómo debería de completar la siguiente sentencia de SQL?
 
-    * SELECT * FROM A _______ B ON A.KEY = B.KEY WHERE __________ = __________
-  
+  - Sera 'NA' porque los factores en R solo toman valkores dentro de los niveles existentes.
+
 Extra: ¿Cuántos posibles exámenes de 5 preguntas se pueden realizar utilizando como banco las diez acá presentadas?
 (responder con código de R.)
 
+```{r}
+n <- 10
+k <- 5
+total_examenes <- choose(n, k)
+total_examenes
+```
 
 ## Sección II Preguntas prácticas. (30pts)
 
@@ -90,14 +131,12 @@ Extra: ¿Cuántos posibles exámenes de 5 preguntas se pueden realizar utilizand
 
 A. De los clientes que están en más de un país,¿cuál cree que es el más rentable y por qué?
 
+  - De los clientes que están en más de un país el cliente más rentable es el cliente a17a7558 porque tiene la mayor venta total entre todos. primero identificar clientes que están en más de un país, luego calcular la venta total de esos clientes en todos los países y por último se ordenó los clientes por venta total en orden descendente y este es el que tiene el primer puesto.
+
 B. Estrategia de negocio ha decidido que ya no operará en aquellos territorios cuyas pérdidas sean "considerables". Bajo su criterio, ¿cuáles son estos territorios y por qué ya no debemos operar ahí?
 
-
-
-
-
-
-
+  - En cuanto a rentabilidad en base a la tabla obtenida los territorios que generan mayores pérdidas para no seguir operando ahi se filtraron territorios que tienen baja venta por unidad y bajo volumen total de ventas. Los territorios mostrados en la tabla son los que la empresa puede considerar abandonar o dejar de operar, ya que generan bajos ingresos tanto en términos de rendimiento por unidad como en volumen total de ventas, lo que los convierte en territorios con pérdidas considerables bajo este criterio.
+  
 
 ### I. Preguntas teóricas
 
@@ -105,7 +144,27 @@ B. Estrategia de negocio ha decidido que ya no operará en aquellos territorios 
 ## A
 
 ```{r }
-###resuelva acá
+library("dplyr")
+df <- readRDS("/Users/georgealbadr/Documents/GitHub/Data-Wrangling/ParcialDataWrangling2024/parcial_anonimo.rds")
+
+head(df)
+
+clientes_varios_paises <- df %>%
+  group_by(Cliente) %>%
+  summarise(paises = n_distinct(Pais)) %>%
+  filter(paises > 1)
+
+venta_clientes <- df %>%
+  filter(Cliente %in% clientes_varios_paises$Cliente) %>%
+  group_by(Cliente) %>%
+  summarise(venta_total = sum(Venta, na.rm = TRUE))
+
+
+clientes_ordenados <- venta_clientes %>%
+  arrange(desc(venta_total))
+
+
+print(clientes_ordenados)
 
 ```
 
@@ -115,7 +174,30 @@ B. Estrategia de negocio ha decidido que ya no operará en aquellos territorios 
 ## B
 
 ```{r }
-###resuelva acá
+# Cargar el paquete dplyr
+library(dplyr)
 
+# Verificar los primeros datos para asegurarnos de que las columnas sean correctas
+head(df)
+
+# Paso 1: Agrupar por territorio y calcular la venta total y las unidades plaza totales
+territorios_perdidas <- df %>%
+  group_by(Territorio) %>%
+  summarise(
+    venta_total = sum(Venta, na.rm = TRUE),
+    unidades_plaza_total = sum(`Unidades plaza`, na.rm = TRUE)
+  )
+
+# Paso 2: Calcular las pérdidas/ganancias por unidad de plaza
+territorios_perdidas <- territorios_perdidas %>%
+  mutate(perdida_por_unidad = venta_total / unidades_plaza_total)
+
+# Paso 3: Ordenar los territorios por pérdida/ganancia por unidad de plaza
+territorios_ordenados <- territorios_perdidas %>%
+  arrange(perdida_por_unidad)
+
+# Mostrar los territorios ordenados
+print(territorios_ordenados)
 ```
+
 
