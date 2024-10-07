@@ -60,9 +60,6 @@ Exportemos el archivo llamado *raw.csv*
 
 Este dataset es de la World Health Organization y cuenta los casos de Tuberculosis en varios paises. m es masculino, f es femenino y los numeros son el rango de edad en el que se encuentra la persona.
 
-
-
-
 ```{r, echo=TRUE,cache=TRUE}
 raw<-read.csv("raw.csv")
 head(raw)
@@ -74,16 +71,17 @@ head(raw)
 Transformar el dataset a formato Tidy.
 
 
-
 Primer paso: Bajar las columnas que tienen variables a filas.
 
 ```{r,echo=TRUE,cache=TRUE, eval=FALSE}
-raw_longer <-raw %>% 
-  pivot_longer(, names_to = "column", values_to = "cases")
+# Transformar el dataset a formato tidy usando pivot_longer
+raw_longer <- raw %>%
+  pivot_longer(cols = starts_with("m") | starts_with("f"),  # Selecciona columnas que empiezan con 'm' o 'f'
+               names_to = "category",   # Columna que contiene los nombres originales (m014, f014, etc.)
+               values_to = "cases")     # Columna que contiene los valores
 
-raw_longer %>%
-  head()
-
+# Mostrar las primeras filas del dataset tidy
+head(raw_longer)
 ```
 
 Segundo paso: Separar las variables que estan en la misma columna extrayendo la variable de sexo (m,f).
@@ -91,31 +89,33 @@ Segundo paso: Separar las variables que estan en la misma columna extrayendo la 
 Sugerencia, utilizar la funcion ```str_sub()``` del paquete **stringr**
 
 ```{r, echo=TRUE, cache=TRUE, eval=FALSE}
-raw_longer$sex <- str_sub(, start = ,end = )
+raw_longer$sex <- str_sub(raw_longer$category, start = 1, end = 1)
+head(raw_longer)
 ```
 
 Tercer paso: Extraer y formatear la variable de edad.
 
 ```{r, echo=TRUE, cache=TRUE, eval=FALSE}
-
+# Definir los rangos de edad posibles
 ages <- c("0-4", "5-14", "0-14", "15-24", "25-34", "35-44", "45-54", "55-64", "65+", NA)
 
+# Formatear la variable de edad
 raw_longer <- raw_longer %>%
-  mutate(age = factor(recode(str_sub(, ), 
+  mutate(age = factor(recode(str_sub(category, start = 2),  # Extraer desde el segundo carácter
+                             "014" = "0-14", 
                              "04" = "0-4", 
                              "514" = "5-14", 
-                             "014" = "0-14", 
                              "1524" = "15-24", 
                              "2534" = "25-34", 
                              "3544" = "35-44", 
                              "4554" = "45-54", 
                              "5564" = "55-64", 
                              "65" = "65+", 
-                             "u" = NA_character_),
-                      levels = ))
+                             "u" = NA_character_),  # Asignar NA a valores "u"
+                      levels = ages))  # Establecer los niveles del factor en el orden correcto
 
-
-
+# Mostrar las primeras filas para revisar
+head(raw_longer)
 ```
 
 
