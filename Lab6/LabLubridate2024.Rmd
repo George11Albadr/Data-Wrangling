@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library(nycflights13)
 library(lubridate)
 library(dplyr)
+
+glimpse(flights)
 ```
 
 ## Resuelva las siguientes preguntas: 
@@ -26,16 +28,65 @@ Problema: Convierte las columnas dep_time (hora de salida) y arr_time (hora de l
 
 Ayuda: Investiga la funcion matematica de modulo de r.
 
+```{r}
+# Helper function to extract hours and minutes from military time
+convert_to_time_components <- function(time) {
+  hours <- time %/% 100  # Integer division to extract hours
+  minutes <- time %% 100  # Modulo operation to extract minutes
+  return(list(hours = hours, minutes = minutes))
+}
+
+# Add datetime columns to the flights dataset
+flights_tidy <- flights %>%
+  filter(!is.na(dep_time) & !is.na(arr_time)) %>%  # Remove rows with missing times
+  mutate(
+    dep_datetime = make_datetime(
+      year, month, day,
+      hour = convert_to_time_components(dep_time)$hours,
+      min = convert_to_time_components(dep_time)$minutes
+    ),
+    arr_datetime = make_datetime(
+      year, month, day,
+      hour = convert_to_time_components(arr_time)$hours,
+      min = convert_to_time_components(arr_time)$minutes
+    )
+  )
+
+# Display the first few rows
+head(flights_tidy)
+```
 
 
 ## Ejercicio 2: Duracion del vuelo
 
 Calcula el tiempo de vuelo total en minutos entre las columnas dep_time y arr_time que calculaste en el primer Ejercicio.
 
+```{r}
+# Calcular el tiempo total de vuelo en minutos
+flights_tidy <- flights_tidy %>%
+  mutate(
+    flight_duration = as.numeric(difftime(arr_datetime, dep_datetime, units = "mins"))
+  )
+
+# Mostrar algunas filas con la nueva columna de duración
+head(flights_tidy %>% select(dep_datetime, arr_datetime, flight_duration))
+```
+
 
 ## Ejercicio 3: Extraer componentes de fechas
 
 Extrae el dia de la semana y la hora en que salieron los aviones y guardalos en las variables `dep_day_of_week` y `dep_hour`.
+```{r}
+# Extraer el día de la semana y la hora de salida
+flights_tidy <- flights_tidy %>%
+  mutate(
+    dep_day_of_week = wday(dep_datetime, label = TRUE, abbr = TRUE),  # Día de la semana (abreviado)
+    dep_hour = hour(dep_datetime)  # Hora de salida
+  )
+
+# Mostrar algunas filas con las nuevas columnas
+head(flights_tidy %>% select(dep_datetime, dep_day_of_week, dep_hour))
+```
 
 
 
@@ -45,9 +96,38 @@ Problema: Usando la columna `time_hour`, crea una nueva columna que indique el d
 
 Ayuda: Invesitga la funcion wday de lubridate.
 
+```{r}
+# Crear nuevas columnas con el día de la semana y la semana del año usando la columna time_hour
+flights_tidy <- flights_tidy %>%
+  mutate(
+    flight_day_of_week = wday(time_hour, label = TRUE, abbr = FALSE),  # Día de la semana completo
+    flight_week_of_year = isoweek(time_hour)  # Semana del año ISO
+  )
+
+# Mostrar algunas filas con las nuevas columnas
+head(flights_tidy %>% select(time_hour, flight_day_of_week, flight_week_of_year))
+```
+
+
 ## Ejercicio 5: Encontrar los vuelos que salieron los fines de semana
 
 Problema: Filtra los vuelos que despegaron un sábado o domingo y devuelve el total de vuelos en fines de semana.
 
+```{r}
+# Filtrar los vuelos que salieron durante el fin de semana (sábado o domingo)
+weekend_flights <- flights_tidy %>%
+  filter(flight_day_of_week %in% c("Saturday", "Sunday"))
+
+# Contar el total de vuelos en fines de semana
+total_weekend_flights <- nrow(weekend_flights)
+
+weekend_flights_selected <- weekend_flights %>%
+  select(time_hour, flight_day_of_week)
+
+# Mostrar el resultado
+total_weekend_flights
+
+weekend_flights_selected
+```
 
 
