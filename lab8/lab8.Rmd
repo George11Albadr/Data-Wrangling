@@ -129,6 +129,66 @@ print(paste("Tarifa Promedio Pickup: Q", comma(round(tarifa_promedio_pickup, 2))
 print(paste("Tarifa Promedio Moto: Q", comma(round(tarifa_promedio_moto, 2))))
 ```
 
+```{r grafico-ingresos, echo=TRUE, warning=FALSE, message=FALSE}
+# Cargar las librerías necesarias
+library(dplyr)
+library(tidyr)    # Necesario para pivot_longer
+library(ggplot2)
+library(scales)
+
+# Verificar que 'ingresos_por_unidad' existe
+if(!exists("ingresos_por_unidad")) {
+  stop("El objeto 'ingresos_por_unidad' no existe. Asegúrate de que el chunk donde se define se ha ejecutado correctamente.")
+}
+
+# Transformar los datos a formato largo para ggplot2
+ingresos_long <- ingresos_por_unidad %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "Tipo_Unidad",
+    values_to = "Ingreso"
+  )
+
+# Definir colores personalizados para cada tipo de unidad
+# Asegúrate de que los nombres coincidan exactamente con los de 'Tipo_Unidad'
+colores_personalizados <- c(
+  "Ingreso_Camion" = "#1f77b4",   # Azul
+  "Ingreso_Pickup" = "#ff7f0e",  # Naranja
+  "Ingreso_Moto" = "#2ca02c"      # Verde
+)
+
+# Crear el gráfico de barras con ajustes adicionales
+ggplot(ingresos_long, aes(x = Tipo_Unidad, y = Ingreso, fill = Tipo_Unidad)) +
+  geom_bar(stat = "identity") +
+  
+  # Escala de colores personalizada
+  scale_fill_manual(values = colores_personalizados) +
+  
+  # Escala Y con más detalles
+  scale_y_continuous(
+    labels = comma_format(prefix = "Q"),
+    breaks = seq(0, max(ingresos_long$Ingreso) * 1.1, by = max(ingresos_long$Ingreso) / 10),
+    limits = c(0, max(ingresos_long$Ingreso) * 1.1),
+    expand = expansion(mult = c(0, 0.05))  # Espacio adicional en la parte superior
+  ) +
+  
+  labs(
+    title = "Ingresos por Tipo de Unidad en 2017",
+    x = "Tipo de Unidad",
+    y = "Ingreso Total (Q)"
+  ) +
+  
+  theme_minimal() +
+  
+  # Remover la leyenda si no es necesaria
+  theme(legend.position = "none") +
+  
+  # Agregar etiquetas de valor encima de cada barra (opcional)
+  geom_text(aes(label = comma(Ingreso, big.mark = ",")), 
+            vjust = -0.5, size = 3.5)
+```
+
+
 ```{r tarifas-actuales, echo=TRUE, warning=FALSE, message=FALSE}
 # Calcular el margen operativo total
 margen_operativo_total <- sum(data_2017$Margen_Bruto, na.rm = TRUE)
