@@ -1,0 +1,192 @@
+---
+title: "Laboratorio de Imputación y Normalización"
+author: "STDT Ing. George Albadr"
+date: "2024-11-18"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+library(dplyr)
+library(tidyr)
+library(caret)
+library(ggplot2)
+```
+
+```{r}
+data_path <- "/Users/georgealbadr/GitHub/Data-Wrangling/Lab9/titanic_MD.csv"
+complete_data_path <- "/Users/georgealbadr/GitHub/Data-Wrangling/Lab9/titanic.csv"
+
+titanic_md <- read.csv(data_path, stringsAsFactors = FALSE)
+titanic_complete <- read.csv(complete_data_path, stringsAsFactors = FALSE)
+```
+
+```{r}
+missing_report <- titanic_md %>%
+  summarise(across(everything(), ~sum(is.na(.)))) %>%
+  gather(key = "Column", value = "MissingCount") %>%
+  mutate(MissingPercentage = round((MissingCount / nrow(titanic_md)) * 100, 2))
+
+missing_report
+```
+
+# Métodos para Imputación de Missing Values:
+
+# 1. Age (13.66% faltantes):
+#    Método: Media (promedio)
+#    Razón: La edad es una variable numérica continua que suele tener una distribución cercana a la normal.
+#           Usar la media asegura que la distribución general de los datos no se distorsione significativamente,
+#           salvo que existan muchos outliers.
+
+# 2. SibSp (1.64% faltantes):
+#    Método: Moda
+#    Razón: Es una variable discreta que indica el número de hermanos o cónyuges a bordo.
+#           Como el porcentaje de datos faltantes es bajo, imputar por la moda (el valor más frecuente)
+#           es adecuado, ya que es menos probable que cause distorsiones en los datos.
+
+# 3. Parch (6.56% faltantes):
+#    Método: Moda
+#    Razón: Similar a SibSp, es una variable categórica/discreta que indica el número de padres o hijos a bordo.
+#           La moda es una buena elección para mantener consistencia en los valores más comunes.
+
+# 4. Fare (4.37% faltantes):
+#    Método: Mediana
+#    Razón: Es una variable numérica continua que puede tener valores extremos (outliers).
+#           La mediana es robusta frente a outliers y representa mejor el valor central de la distribución.
+
+# Columnas sin valores faltantes:
+# - PassengerId, Survived, Pclass, Name, Sex, Ticket:
+#   Estas columnas no requieren imputación porque no tienen valores faltantes (MissingCount = 0).
+
+```{r}
+complete_rows <- titanic_md[complete.cases(titanic_md), ]
+n_complete <- nrow(complete_rows)
+paste("Número de filas completas: ", n_complete)
+```
+
+
+```{r}
+imputed_mean <- titanic_md %>%
+  mutate(across(where(is.numeric), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+
+imputed_mode <- titanic_md %>%
+  mutate(across(where(is.numeric), ~ifelse(is.na(.), as.numeric(names(sort(table(.), decreasing = TRUE))[1]), .)))
+
+imputed_median <- titanic_md %>%
+  mutate(across(where(is.numeric), ~ifelse(is.na(.), median(., na.rm = TRUE), .)))
+```
+
+```{r}
+fit <- lm(Age ~ Pclass + Sex + SibSp + Parch + Fare, data = titanic_md, na.action = na.exclude)
+titanic_md$Age[is.na(titanic_md$Age)] <- predict(fit, titanic_md[is.na(titanic_md$Age), ])
+```
+
+```{r}
+outliers_sd <- titanic_md %>%
+  filter(if_any(where(is.numeric), ~abs(scale(.)) > 3))
+nrow(outliers_sd)
+```
+
+#Comparación contra titanic.csv
+
+```{r}
+
+numeric_columns <- names(titanic_md)[sapply(titanic_md, is.numeric)]
+
+
+
+compare_methods <- function(column_name, method_data) {
+  mse <- mean((titanic_complete[[column_name]] - method_data[[column_name]])^2, na.rm = TRUE)
+  return(mse)
+}
+
+
+compare_results <- data.frame(
+  Column = numeric_columns,
+  Mean_Imputation = sapply(numeric_columns, function(col) compare_methods(col, imputed_mean)),
+  Mode_Imputation = sapply(numeric_columns, function(col) compare_methods(col, imputed_mode)),
+  Median_Imputation = sapply(numeric_columns, function(col) compare_methods(col, imputed_median))
+)
+options(scipen = 999)
+
+compare_results
+```
+
+# Resultados de la comparación de imputaciones
+
+# PassengerId:
+#    Todas las imputaciones (media, moda y mediana) son 0, ya que no había valores faltantes en esta columna.
+#    Por lo tanto, no se aplicaron cambios.
+
+# Survived:
+#    Todas las imputaciones (media, moda y mediana) son 0, ya que no había valores faltantes en esta columna.
+#    Esta columna no requería imputación.
+
+# Pclass:
+#    Todas las imputaciones (media, moda y mediana) son 0, ya que no había valores faltantes en esta columna.
+#    No se realizaron ajustes.
+
+# Age:
+#    - Mean Imputation: 33.5142
+#    - Mode Imputation: 51.7678
+#    - Median Imputation: 33.5123
+#    Observaciones: La imputación por media y mediana generan valores muy similares y razonables.
+#                   Sin embargo, la moda da un valor mucho más alto, probablemente debido a la naturaleza
+#                   discreta de la moda.
+
+# SibSp:
+#    - Mean Imputation: 0.0043
+#    - Mode Imputation: 0.0109
+#    - Median Imputation: 0.0109
+#    Observaciones: Todos los métodos producen valores bajos y similares, con diferencias mínimas.
+
+# Parch:
+#    - Mean Imputation: 0.0392
+#    - Mode Imputation: 0.0656
+#    - Median Imputation: 0.0656
+#    Observaciones: Los valores generados por moda y mediana son idénticos, mientras que la media es
+#                   ligeramente más baja. Esto indica que los valores faltantes en esta columna están
+#                   bien distribuidos.
+
+# Fare:
+#    - Mean Imputation: 155.9516
+#    - Mode Imputation: 247.0214
+#    - Median Imputation: 164.9754
+#    Observaciones: La moda genera un valor significativamente más alto, probablemente por la naturaleza
+#                   sesgada de los datos. La mediana parece ser la mejor opción, ya que es más robusta
+#                   frente a outliers.
+
+
+# Parte 2
+
+#Standarization
+```{r}
+titanic_standardized <- titanic_md %>%
+  mutate(across(where(is.numeric), scale))
+```
+
+#MinMaxScaling
+```{r}
+titanic_minmax <- titanic_md %>%
+  mutate(across(where(is.numeric), ~(. - min(., na.rm = TRUE)) / (max(., na.rm = TRUE) - min(., na.rm = TRUE))))
+```
+
+#MaxAbsScaler
+```{r}
+titanic_maxabs <- titanic_md %>%
+  mutate(across(where(is.numeric), ~. / max(abs(.), na.rm = TRUE)))
+```
+
+
+
+```{r}
+
+stat_comparison_original <- titanic_complete %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd), na.rm = TRUE))
+
+stat_comparison_standardized <- titanic_standardized %>%
+  summarise(across(where(is.numeric), list(mean = mean, sd = sd), na.rm = TRUE))
+
+list(Original = stat_comparison_original, Standardized = stat_comparison_standardized)
+```
+
